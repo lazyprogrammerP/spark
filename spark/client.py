@@ -72,13 +72,13 @@ class Spark:
             predSpan.set_attributes(
                 {
                     "application": self.application,
-                    "version": version,
                     "inputs": json.dumps(inputs),
                     "outputs": json.dumps(outputs),
                     "feedback_keys": feedback_keys,
                     "ignore_inputs": ignore_inputs,
                     "feedback_id": feedback_id,
                     "timestamp": timestamp,
+                    "version": version,
                     "_type": "prediction",
                 }
             )
