@@ -33,7 +33,6 @@ class Spark:
     def compute_feedback_id(self, inputs, feedback_keys):
         feedback_id = {k: inputs[k] for k in (feedback_keys or dict(inputs).keys())}
         # Generate a feedback_id based on the input values and feedback keys dictionary
-        print(hashlib.md5(json.dumps(feedback_id, sort_keys=True).encode("utf-8")).hexdigest())
         return hashlib.md5(json.dumps(feedback_id, sort_keys=True).encode("utf-8")).hexdigest()
 
     def log_prediction_attribute(
