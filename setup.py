@@ -1,5 +1,8 @@
 from setuptools import find_packages, setup
 
+with open("requirements.txt") as fd:
+    install_requires = fd.read().splitlines()
+
 setup(
     name="spark",
     version="0.0.1",
@@ -10,4 +13,5 @@ setup(
     license="MIT",
     keywords="",
     packages=find_packages(),
+    install_requires=install_requires,
 )
