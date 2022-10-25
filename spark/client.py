@@ -86,9 +86,9 @@ class Spark:
         with self.tracer.start_as_current_span("feedback") as feedbackSpan:
             feedbackSpan.set_attributes(
                 {
-                    "application": json.dumps({"application": self.application}),
+                    "user_metadata": json.dumps({"application": self.application}),
                     "feedback_id": feedback_id,
-                    "feedback_content": feedbacks,
+                    "feedback_content": json.dumps(feedbacks),
                     "feedback_timestamp": timestamp,
                     "_type": "feedback",
                 }
