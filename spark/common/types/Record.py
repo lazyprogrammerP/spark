@@ -11,8 +11,8 @@ class Prediction(TypedDict):
 
 @dataclass
 class Record:
-    inputs: Dict[str, Prediction] = field(default_factory=dict)
-    outputs: Dict[str, Prediction] = field(default_factory=dict)
+    inputs: Optional[Dict[str, Prediction]] = field(default_factory=dict)
+    outputs: Optional[Dict[str, Prediction]] = field(default_factory=dict)
     feedback_keys: Optional[List[str]] = field(default_factory=list)
     feedback_id: Optional[str] = field(default_factory=lambda: None)
     feedbacks: Optional[Dict[str, str]] = field(default_factory=dict)
