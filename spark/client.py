@@ -86,13 +86,93 @@ class Spark:
         with self.tracer.start_as_current_span("feedback") as feedbackSpan:
             feedbackSpan.set_attributes(
                 {
-                    "application": self.application,
+                    "application": json.dumps({"application": self.application}),
                     "feedback_id": feedback_id,
-                    "feedbacks": feedbacks,
-                    "timestamp": timestamp,
+                    "feedback_content": feedbacks,
+                    "feedback_timestamp": timestamp,
                     "_type": "feedback",
                 }
             )
+
+    def log_record(self, record: Record = {}, sample_rate: int = 1.00):
+        check_sample_rate(sample_rate=sample_rate)
+        if random.random() > sample_rate:
+            return
+
+        feedback_keys = record.feedback_keys
+        feedback_id = record.feedback_id
+
+        if type(record).__name__ == "Record":
+            if is_not_empty(feedback_keys) and record.feedback_id:
+                raise Exception("Encountered feedback_keys and feedback_id simultaneously")
+
+            inputs = record.inputs
+            outputs = record.outputs
+            feedbacks = record.feedbacks
+
+            ignore_inputs = record.ignore_inputs
+            for ignored_input in ignore_inputs:
+                if inputs.get(ignored_input):
+                    inputs.pop(ignored_input)
+
+            input_exists = is_not_empty(inputs)
+            output_exists = is_not_empty(outputs)
+            pred_exists = input_exists and output_exists
+            feedback_exists = is_not_empty(feedbacks)
+
+            if isinstance(feedback_id, str):
+                pass
+            else:
+                if input_exists:
+                    feedback_id = self.compute_feedback_id(inputs=inputs, feedback_keys=feedback_keys)
+                else:
+                    raise Exception("Cannot generate feedback id without 'inputs'")
+
+            timestamp = record.timestamp
+
+            # If predicition and feedback both exist, then build the prediction and feedback attribute and log it
+            if pred_exists and feedback_exists:
+                self.log_prediction_attribute(
+                    inputs=inputs,
+                    outputs=outputs,
+                    feedback_keys=feedback_keys,
+                    ignore_inputs=ignore_inputs,
+                    feedback_id=feedback_id,
+                    timestamp=timestamp,
+                )
+                self.log_feedback_attribute(
+                    feedback_id=feedback_id,
+                    feedbacks=feedbacks,
+                    timestamp=timestamp,
+                )
+
+                return feedback_id
+
+            # If prediction exists but feedback doesn't then build the predicition attribute with a feedback_id
+            elif pred_exists:
+                self.log_prediction_attribute(
+                    inputs=inputs,
+                    outputs=outputs,
+                    feedback_keys=feedback_keys,
+                    ignore_inputs=ignore_inputs,
+                    feedback_id=feedback_id,
+                    timestamp=timestamp,
+                )
+
+                return feedback_id
+
+            # If feedback exists but prediction doesn't then build the feedback attribute with the provided feedback_id
+            elif feedback_exists:
+                self.log_feedback_attribute(
+                    feedback_id=feedback_id,
+                    feedbacks=feedbacks,
+                    timestamp=timestamp,
+                )
+
+            else:
+                raise Exception("Tried to log a record without prediction and without feedback")
+        else:
+            raise Exception("Expected type of 'log' to be 'Record' but instead got " + type(record).__name__)
 
     def log_records(self, records: List[Record] = [], sample_rate: int = 1.00):
         check_sample_rate(sample_rate=sample_rate)
@@ -177,10 +257,8 @@ class Spark:
     from spark import Spark
     from spark.common.types import Record
 
-    spark = Spark("my-first-project")
-    records = list()
-    # inputs and outputs are or feedbacks is required.
-    records.append(
+    spark = Spark("my-second-project")
+    spark.log_record(
         Record(
             inputs={
                 "input_key_one": {"value": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam?", "type": "text"},
@@ -189,5 +267,4 @@ class Spark:
             outputs={"output_key_one": {"value": "Neutral", "type": "text"}},
         )
     )
-    spark.log_records(records)
 """
