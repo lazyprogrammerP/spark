@@ -171,6 +171,8 @@ class Spark:
 
             else:
                 raise Exception("Tried to log a record without prediction and without feedback")
+
+            self.provider.shutdown()
         else:
             raise Exception("Expected type of 'log' to be 'Record' but instead got " + type(record).__name__)
 
