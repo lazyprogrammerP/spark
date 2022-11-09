@@ -14,7 +14,7 @@ from spark.common.utils import check_sample_rate, get_current_timestamp, is_empt
 
 
 class Spark:
-    ENDPOINT = "http://35.226.154.216:4318/v1/traces"
+    ENDPOINT = "http://34.136.153.142:4318/v1/traces"
 
     def __init__(self, application):
         self.application = application
