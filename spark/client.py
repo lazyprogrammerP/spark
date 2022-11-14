@@ -133,12 +133,7 @@ class Spark:
             # If predicition and feedback both exist, then build the prediction and feedback attribute and log it
             if pred_exists and feedback_exists:
                 self.log_prediction_attribute(
-                    inputs=inputs,
-                    outputs=outputs,
-                    feedback_keys=feedback_keys,
-                    ignore_inputs=ignore_inputs,
-                    feedback_id=feedback_id,
-                    timestamp=timestamp,
+                    inputs=inputs, outputs=outputs, feedback_keys=feedback_keys, ignore_inputs=ignore_inputs, feedback_id=feedback_id, timestamp=timestamp, version=record.version
                 )
                 self.log_feedback_attribute(
                     feedback_id=feedback_id,
@@ -151,12 +146,7 @@ class Spark:
             # If prediction exists but feedback doesn't then build the predicition attribute with a feedback_id
             elif pred_exists:
                 self.log_prediction_attribute(
-                    inputs=inputs,
-                    outputs=outputs,
-                    feedback_keys=feedback_keys,
-                    ignore_inputs=ignore_inputs,
-                    feedback_id=feedback_id,
-                    timestamp=timestamp,
+                    inputs=inputs, outputs=outputs, feedback_keys=feedback_keys, ignore_inputs=ignore_inputs, feedback_id=feedback_id, timestamp=timestamp, version=record.version
                 )
 
                 return feedback_id
@@ -222,6 +212,7 @@ class Spark:
                         ignore_inputs=ignore_inputs,
                         feedback_id=feedback_id,
                         timestamp=timestamp,
+                        version=record.version,
                     )
                     self.log_feedback_attribute(
                         feedback_id=feedback_id,
@@ -238,6 +229,7 @@ class Spark:
                         ignore_inputs=ignore_inputs,
                         feedback_id=feedback_id,
                         timestamp=timestamp,
+                        version=record.version,
                     )
 
                 # If feedback exists but prediction doesn't then build the feedback attribute with the provided feedback_id
