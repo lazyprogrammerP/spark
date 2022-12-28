@@ -6,7 +6,7 @@ from spark.common.utils import get_current_timestamp
 
 class Prediction(TypedDict):
     value: str
-    type: Literal["text", "image"]
+    type: Literal["string", "number", "categorical", "timestamp", "image"]
 
 
 @dataclass
