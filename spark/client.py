@@ -3,13 +3,14 @@ import json
 import random
 from typing import Dict, List, Optional
 
-from common.types.Record import DataRow, Record
-from common.utils import check_sample_rate, get_current_timestamp, is_empty, is_not_empty
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+from spark.common.types import DataRow, Record
+from spark.common.utils import check_sample_rate, get_current_timestamp, is_empty, is_not_empty
 
 
 class Spark:

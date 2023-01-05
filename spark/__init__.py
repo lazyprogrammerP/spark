@@ -1,3 +1,3 @@
-from client import Spark
+from spark.client import Spark
 
 Spark = Spark

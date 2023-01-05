@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Literal, Optional, TypedDict
 
-from common.utils import get_current_timestamp
+from spark.common.utils import get_current_timestamp
 
 
 class DataRow(TypedDict):
