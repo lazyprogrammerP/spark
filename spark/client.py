@@ -3,18 +3,17 @@ import json
 import random
 from typing import Dict, List, Optional
 
+from common.types.Record import DataRow, Record
+from common.utils import check_sample_rate, get_current_timestamp, is_empty, is_not_empty
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from spark.common.types.Record import Prediction, Record
-from spark.common.utils import check_sample_rate, get_current_timestamp, is_empty, is_not_empty
-
 
 class Spark:
-    ENDPOINT = "http://34.136.153.142:4318/v1/traces"
+    ENDPOINT = "http://collector.newron.ai:4318/v1/traces"
 
     def __init__(self, application):
         self.application = application
@@ -37,13 +36,14 @@ class Spark:
 
     def log_prediction_attribute(
         self,
-        inputs: Prediction,
-        outputs: Prediction,
+        inputs: Dict[str, DataRow],
+        outputs: Dict[str, DataRow],
         feedback_keys: List[str],
         ignore_inputs: List[str],
         feedback_id: str,
         timestamp: int,
         version: Optional[str] = "1",
+        application_env: Optional[str] = "dev",
     ):
         if not type(inputs).__name__ == "dict":
             raise Exception("Excpected type of 'inputs' to be 'dict' but instead got " + type(inputs).__name__)
@@ -70,7 +70,9 @@ class Spark:
         with self.tracer.start_as_current_span("prediction") as predSpan:
             predSpan.set_attributes(
                 {
-                    "application": self.application,
+                    "application_id": self.application,
+                    "application_name": self.application,
+                    "application_env": application_env,
                     "inputs": json.dumps(inputs),
                     "outputs": json.dumps(outputs),
                     "feedback_keys": feedback_keys,
@@ -82,14 +84,16 @@ class Spark:
                 }
             )
 
-    def log_feedback_attribute(self, feedback_id: int, feedbacks: Dict[str, str], timestamp: Optional[int]):
+    def log_feedback_attribute(self, feedback_id: int, feedbacks: Dict[str, DataRow], timestamp: Optional[int]):
         with self.tracer.start_as_current_span("feedback") as feedbackSpan:
             feedbackSpan.set_attributes(
                 {
-                    "user_metadata": json.dumps({"application": self.application}),
+                    "application_id": self.application,
                     "feedback_id": feedback_id,
+                    "feedback_version": "1",
                     "feedback_content": json.dumps(feedbacks),
                     "feedback_timestamp": timestamp,
+                    "user_metadata": json.dumps({"application": self.application}),
                     "_type": "feedback",
                 }
             )
@@ -133,7 +137,14 @@ class Spark:
             # If predicition and feedback both exist, then build the prediction and feedback attribute and log it
             if pred_exists and feedback_exists:
                 self.log_prediction_attribute(
-                    inputs=inputs, outputs=outputs, feedback_keys=feedback_keys, ignore_inputs=ignore_inputs, feedback_id=feedback_id, timestamp=timestamp, version=record.version
+                    inputs=inputs,
+                    outputs=outputs,
+                    feedback_keys=feedback_keys,
+                    ignore_inputs=ignore_inputs,
+                    feedback_id=feedback_id,
+                    timestamp=timestamp,
+                    version=record.version,
+                    application_env=record.application_env,
                 )
                 self.log_feedback_attribute(
                     feedback_id=feedback_id,
@@ -146,7 +157,14 @@ class Spark:
             # If prediction exists but feedback doesn't then build the predicition attribute with a feedback_id
             elif pred_exists:
                 self.log_prediction_attribute(
-                    inputs=inputs, outputs=outputs, feedback_keys=feedback_keys, ignore_inputs=ignore_inputs, feedback_id=feedback_id, timestamp=timestamp, version=record.version
+                    inputs=inputs,
+                    outputs=outputs,
+                    feedback_keys=feedback_keys,
+                    ignore_inputs=ignore_inputs,
+                    feedback_id=feedback_id,
+                    timestamp=timestamp,
+                    version=record.version,
+                    application_env=record.application_env,
                 )
 
                 return feedback_id
@@ -213,6 +231,7 @@ class Spark:
                         feedback_id=feedback_id,
                         timestamp=timestamp,
                         version=record.version,
+                        application_env=record.application_env,
                     )
                     self.log_feedback_attribute(
                         feedback_id=feedback_id,
@@ -230,6 +249,7 @@ class Spark:
                         feedback_id=feedback_id,
                         timestamp=timestamp,
                         version=record.version,
+                        application_env=record.application_env,
                     )
 
                 # If feedback exists but prediction doesn't then build the feedback attribute with the provided feedback_id
@@ -248,17 +268,29 @@ class Spark:
 
 ### Example Code ###
 """
-    from spark import Spark
-    from spark.common.types import Record
+from spark import Spark
+from spark.common.types import Record
 
-    spark = Spark("my-second-project")
-    spark.log_record(
-        Record(
-            inputs={
-                "input_key_one": {"value": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam?", "type": "text"},
-                "input_key_two": {"value": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna?", "type": "text"},
-            },
-            outputs={"output_key_one": {"value": "Neutral", "type": "text"}},
-        )
+spark = Spark("test-app")
+
+feedback_id = spark.log_record(
+    Record(
+        # feedback_id="eeb5e6467fc5dac2f6e71ed897849bd9",
+        inputs={"file": {"value": "https://newron-model.s3.amazonaws.com/test_id.jpg"}, "type": "url"},
+        outputs={
+            "image": "https://newron-model.s3.amazonaws.com/test_id.jpg",
+            "dob": "73121S",
+            "sex": "M",
+            "doe": "221024",
+            "country": "IND",
+            "id_card": "102214633",
+            "surname": "RAM",
+            "name": "GURMIT SINGH CHANAN",
+        },
+        feedbacks={"status": {"value": "incorrect", "type": "categorical"}, "comment": {"value": "DOB has an additional S, surname seems inaccurate."}},
+        application_env="prod",
     )
+)
+
+print(feedback_id)
 """
