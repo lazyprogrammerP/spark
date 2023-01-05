@@ -1,4 +1,4 @@
-from spark.common.types.Record import Prediction, Record
+from common.types.Record import DataRow, Record
 
-Prediction = Prediction
+DataRow = DataRow
 Record = Record
